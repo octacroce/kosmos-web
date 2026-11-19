@@ -197,6 +197,24 @@
       '<a href="https://instagram.com/kosmos_rb" target="_blank" rel="noopener">Instagram</a></div>');
   }
 
+  /* ---------- Aviso de cookies (pastilla): no tapa la primera pantalla ni los botones de compra (como en Axily) ---------- */
+  function cookies() {
+    const raiz = document.documentElement;
+    let espera = null;
+    const revisar = () => {
+      espera = null;
+      const zona = window.innerHeight - 70;  // la pastilla vive en los últimos ~70 px de la pantalla
+      const tapa = $$(".kz .hero .botones, #product_form .product-actions, #ns-block-kz_consultar").some(el => {
+        const r = el.getBoundingClientRect();
+        return r.height > 0 && r.bottom > zona && r.top < window.innerHeight;
+      });
+      raiz.classList.toggle("kz-cookies-espera", window.scrollY < window.innerHeight * 0.5 || tapa);
+    };
+    window.addEventListener("scroll", () => { if (!espera) espera = requestAnimationFrame(revisar); }, { passive: true });
+    window.addEventListener("resize", revisar);
+    revisar();
+  }
+
   /* ---------- WhatsApp flotante (el nativo): aparece al bajar ---------- */
   function flotante() {
     const b = $(".btn-whatsapp");
@@ -229,5 +247,6 @@
   barraFija();
   accesos();
   flotante();
+  cookies();
   window.KZ_OK = true;
 })();
