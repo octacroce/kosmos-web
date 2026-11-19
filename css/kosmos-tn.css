@@ -230,6 +230,7 @@ body { font-family: var(--sans); color: var(--tinta); background: var(--crema); 
 .kz .seccion--tienda-pie { padding: 30px 0 64px; }
 .kz .chips { position: static; margin-top: 0; padding-top: 4px; padding-bottom: 6px; background: transparent; }
 .kz .chip { color: var(--tinta); }
+.kz .btn:hover, .kz .btn:focus { opacity: 1; }  /* Ipanema baja la opacidad de todo .btn al pasar el mouse */
 .kz .chip[aria-current="page"] { background: var(--noche); color: var(--crema); border-color: var(--noche); }
 .kz .intencion { color: var(--tinta); }
 .kz .intencion small { display: inline-flex; align-items: center; gap: 6px; }
@@ -237,6 +238,11 @@ body { font-family: var(--sans); color: var(--tinta); background: var(--crema); 
 .kz .guia__pasos { margin-top: 22px; }
 .kz .ig { margin-top: 24px; }
 .kz-chips { padding-bottom: 6px; }
+.kz .seccion--tienda .chips { margin-bottom: 14px; }
+@media (min-width: 980px) {
+  .kz .chips { flex-wrap: wrap; overflow: visible; margin-inline: 0; padding-inline: 0; }
+  .kz-chips .chips { margin-inline: 0; padding-inline: 0; }
+}
 .kz-chips .chips { margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter); }
 
 /* Barra de anuncio */
@@ -252,9 +258,15 @@ body { font-family: var(--sans); color: var(--tinta); background: var(--crema); 
 .desktop-dropdown { background: var(--papel); }
 .desktop-dropdown .nav-list-link-heading { font: 500 15px/1.4 var(--sans); }
 
-/* Menú del celu (lateral nativo) */
-#nav-hamburger .modal-header, #nav-hamburger .modal-body, #nav-hamburger { background: var(--papel); }
-#nav-hamburger .nav-list-link { font: 400 17px/1.35 var(--sans); }
+/* Menú del celu (lateral nativo) + "Ayuda" de la propuesta (lo suma el JS) */
+#nav-hamburger, .modal-nav-hamburger, .modal-nav-hamburger .modal-header, .modal-nav-hamburger .modal-body { background: var(--papel); }
+.modal-nav-hamburger .nav-list-link { font: 400 17px/1.35 var(--sans) !important; text-transform: none !important; letter-spacing: 0 !important; color: var(--tinta); }
+.modal-nav-hamburger .modal-title { font: 600 1.5rem/1 var(--serif) !important; text-transform: none !important; letter-spacing: 0; }
+#nav-hamburger > .modal-body { align-content: start !important; grid-template-rows: none !important; }
+.kz-menu-extra { padding: 18px 16px 8px; display: grid; }
+.kz-menu-extra p { font: 500 12px/1.4 var(--sans); letter-spacing: .18em; text-transform: uppercase; color: var(--oro-osc); margin: 6px 0 4px; }
+.kz-menu-extra a { display: flex; align-items: center; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid var(--linea); font: 400 16px/1.3 var(--sans); color: var(--tinta); text-decoration: none; }
+.kz-menu-extra .kz-i { color: var(--verde-wa); }
 
 /* Títulos de página (categoría, búsqueda, carrito) */
 .page-header-title, .section-page-header h1 { font: 600 clamp(2.1rem, 7.4vw, 3.4rem)/1.02 var(--serif); letter-spacing: -.01em; }
@@ -267,9 +279,13 @@ body { font-family: var(--sans); color: var(--tinta); background: var(--crema); 
 /* Tarjetas de producto (grilla nativa: portada, categorías, búsqueda y relacionados) */
 .js-item-product.product-item { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; position: relative; text-align: left; }
 .js-item-product .product-item-image-container { grid-area: 1 / 1; position: relative; border-radius: var(--r-chico); overflow: hidden; background: var(--arena); }
-.js-item-product .product-item-image { object-fit: cover; transition: transform .7s var(--ease); }
-.js-item-product:hover .product-item-image { transform: scale(1.035); }
-.js-item-product .product-item-information { grid-area: 2 / 1; padding: 10px 0 0; text-align: left; }
+/* todas las fotos en 3:4 y recortadas, como las tarjetas de la propuesta */
+.js-item-product .product-item-image-container > div[style*="padding-bottom"] { padding-bottom: 133.333% !important; }
+.js-item-product .product-item-image { top: 0; left: 0 !important; width: 100% !important; height: 100% !important; transform: none !important; object-fit: cover; transition: transform .7s var(--ease); }
+.js-item-product:hover .product-item-image { transform: scale(1.035) !important; }
+/* el "+" va sobre la foto: la info se abre en la grilla de la tarjeta */
+.js-item-product .product-item-information { display: contents; }
+.js-item-product .product-item-link { grid-area: 2 / 1; display: block; padding: 10px 0 0; text-align: left; color: var(--tinta); }
 .js-item-product .product-item-name { font: 500 15px/1.3 var(--sans); color: var(--tinta); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.6em; margin: 0; text-transform: none; letter-spacing: 0; }
 .js-item-product .product-item-price-container { margin-top: 4px; justify-content: flex-start; }
 .js-item-product .product-item-price { font: 600 16px/1.3 var(--sans); color: var(--tinta); }
@@ -301,23 +317,31 @@ body { font-family: var(--sans); color: var(--tinta); background: var(--crema); 
 .product-actions .form-quantity { border: 1px solid rgba(35, 26, 46, .3); border-radius: var(--pill); height: 52px; background: transparent; }
 .product-actions .form-quantity .form-control { background: transparent; border: 0; font-weight: 500; }
 .product-form .js-addtocart.btn-big, .buy-button-container .js-addtocart { min-height: 52px; border-radius: var(--pill); font: 500 16px/1 var(--sans); letter-spacing: .01em; text-transform: none; }
-.kz-consultar .btn--wa { margin-top: 0; }
+a.kz-consultar, #ns-block-kz_consultar { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; border-radius: var(--pill) !important; border: 1px solid rgba(35, 26, 46, .55) !important; background: transparent !important; color: var(--tinta) !important; font: 500 16px/1.2 var(--sans) !important; text-transform: none; letter-spacing: .01em; }
+a.kz-consultar .kz-i { color: var(--verde-wa); }
+a.kz-consultar:hover { background: rgba(35, 26, 46, .05) !important; opacity: 1; }
 .product-info .icon-text-item, .product-info [data-block-type="icon-text-item"] { gap: 12px; }
 #ns-block-purchase_info { padding: 18px; background: var(--papel); border: 1px solid var(--linea); border-radius: var(--r); font-size: 14.5px; }
 #ns-block-purchase_info svg { color: var(--lila-osc); }
 #ns-block-purchase_info p { margin: 0; }
 #ns-block-entregas [class*="title"] p, #ns-block-entregas [class*="title"] { font-weight: 500; }
 
+/* Compra rápida (el "+" de un producto con variedades) */
+.quickshop-name { font: 600 clamp(1.8rem, 6.4vw, 2.3rem)/1.05 var(--serif) !important; letter-spacing: -.01em; text-transform: none; color: var(--tinta); }
+.quickshop-price { font: 600 1.45rem/1 var(--sans) !important; color: var(--tinta); }
+
 /* Descripción y relacionados */
-.section-product-description h2, .section-product-description .h2, [data-section-type="product-description"] h2,
-[data-section-type="related-products"] h2, [data-section-type="related-products"] .h2 { font: 600 clamp(1.8rem, 6.4vw, 2.5rem)/1.05 var(--serif) !important; text-transform: none; letter-spacing: 0; }
-.product-description, .product-description p, .product-description li { color: var(--gris); font-size: 16px; line-height: 1.55; }
-.product-description h3 { font: 500 13px/1.3 var(--sans) !important; letter-spacing: .14em; text-transform: uppercase; color: var(--oro-osc); margin: 22px 0 8px; }
-.product-description p { margin: 0 0 10px; max-width: 62ch; }
-.product-description p strong, .product-description li strong { color: var(--tinta); font-weight: 500; }
-.product-description ul { list-style: none; padding: 0; margin: 8px 0 12px; display: grid; gap: 8px; }
-.product-description ul li { position: relative; padding-left: 22px; color: var(--tinta); max-width: 62ch; }
-.product-description ul li::before { content: ""; position: absolute; left: 2px; top: .62em; width: 8px; height: 8px; background: var(--oro); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+.product-description-heading, [data-section-type="related-products"] h2, [data-section-type="related-products"] .h2 { font: 600 clamp(1.8rem, 6.4vw, 2.5rem)/1.05 var(--serif) !important; text-transform: none; letter-spacing: 0; color: var(--tinta); margin-bottom: 14px; }
+[data-section-type="product-description"] .product-description-heading, [data-section-type="product-description"] .product-description-content { max-width: 860px; }
+.product-description-content { color: var(--gris); font-size: 16px; line-height: 1.55; }
+.product-description-content h3 { font: 500 13px/1.3 var(--sans) !important; letter-spacing: .14em; text-transform: uppercase; color: var(--oro-osc); margin: 22px 0 8px; }
+.product-description-content p { margin: 0 0 10px; max-width: 62ch; color: var(--gris); }
+.product-description-content p strong, .product-description-content li strong { color: var(--tinta); font-weight: 500; }
+.product-description-content ul { list-style: none !important; padding: 0 !important; margin: 8px 0 12px; display: grid; gap: 8px; }
+.product-description-content ul li { position: relative; padding-left: 22px; color: var(--tinta); max-width: 62ch; list-style: none; }
+.product-description-content ul li::before { content: ""; position: absolute; left: 2px; top: .62em; width: 8px; height: 8px; background: var(--oro); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+.product-description-content ul li::marker { content: none; }
+.product-description-content ul li { margin: 0; }
 
 /* Carrito lateral (nativo) + botón de WhatsApp */
 #modal-cart { background: var(--papel); }
@@ -338,8 +362,19 @@ body { font-family: var(--sans); color: var(--tinta); background: var(--crema); 
 .kz-sin-checkout .js-ajax-cart-submit, .kz-sin-checkout #go-to-checkout { display: none !important; }
 .cart-continue-shopping .btn-link { color: var(--gris); font-size: 14px; }
 
-/* Aviso al agregar (notificación nativa) */
-.notification-floating, .js-alert-added-to-cart { border-radius: 14px; }
+/* Aviso al agregar (notificación nativa), oscuro como el de la propuesta; el JS le suma "Ver carrito" */
+.js-notification-cart.notification-cart-container { left: 12px; right: 12px; bottom: 12px; width: auto; max-width: 460px; margin-inline: auto; }
+.js-notification-cart .notification { background: var(--noche); color: var(--crema); border: 0 !important; border-radius: 14px; padding: 12px 40px 12px 14px; box-shadow: 0 12px 30px rgba(26, 18, 34, .28); font-family: var(--sans); }
+.js-notification-cart .notification-close, .js-notification-cart .notification-close svg { fill: var(--crema); color: var(--crema); }
+.js-notification-cart .notification-cart-image-container { width: 56px; height: 56px; border-radius: 8px; }
+.js-notification-cart .notification-info-line { margin-bottom: 2px; font-size: 14px; }
+.js-notification-cart .notification-cart-success { color: var(--oro-suave); font-weight: 500; margin-top: 2px; }
+.kz-ver-carrito { margin-top: 8px; padding: 8px 14px; border-radius: var(--pill); background: var(--crema); color: var(--noche); font: 500 14px/1 var(--sans); border: 0; cursor: pointer; }
+@media (min-width: 980px) { .js-notification-cart.notification-cart-container { top: 24px; bottom: auto; left: auto; right: 24px; width: 400px; } }
+
+/* Búsqueda */
+.products-grid-search-heading { font: 400 16px/1.45 var(--sans) !important; color: var(--gris); margin: 0 0 14px; text-transform: none; letter-spacing: 0; }
+.products-grid-search-heading strong { color: var(--tinta); font-weight: 600; }
 
 /* Botón flotante de WhatsApp (nativo) */
 .btn-whatsapp { width: 58px; height: 58px; border-radius: 50%; background: var(--verde-wa) !important; box-shadow: 0 6px 18px rgba(30, 158, 84, .32); transition: opacity .35s var(--ease), translate .35s var(--ease), bottom .35s var(--ease); }
@@ -363,3 +398,4 @@ body.kz-con-barra .btn-whatsapp { bottom: 96px; }
 .section-footer a { color: rgba(247, 240, 230, .82); }
 .section-footer .footer-payment-shipping-label { color: var(--oro); font: 500 12px/1.4 var(--sans); letter-spacing: .18em; text-transform: uppercase; }
 .section-footer .footer-main-info:empty { display: none; }
+.section-footer .icon-logo { background: #fff; border-radius: 4px; padding: 2px; box-sizing: content-box; }

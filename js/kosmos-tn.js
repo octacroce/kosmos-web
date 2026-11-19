@@ -66,29 +66,46 @@
     const variante = $$(".js-product-variants .js-insta-variation-label").map(x => limpio(x.textContent)).filter(Boolean).join(" / ");
     return nombre ? `¡Hola Kosmos! Quiero consultar por ${nombre}${variante ? ` (${variante})` : ""}.` : "¡Hola Kosmos! Quiero hacer una consulta.";
   }
+  const CONSULTAR = "#ns-block-kz_consultar, [data-kz-consultar]";
+  function botonConsultar() {
+    const b = $(CONSULTAR);
+    if (!b || b.dataset.kzListo) return;
+    b.dataset.kzListo = "1";
+    b.target = "_blank";
+    b.rel = "noopener";
+    b.classList.add("kz-consultar");
+    b.insertAdjacentHTML("afterbegin", ICONO_WA);
+  }
   document.addEventListener("click", e => {
-    const b = e.target.closest("[data-kz-consultar]");
+    const b = e.target.closest(CONSULTAR);
     if (b) b.href = wa(textoConsulta());
   }, true);
 
   function barraFija() {
     const form = $("#product_form");
     const boton = form && $("input.js-addtocart", form);
-    if (!boton || !("IntersectionObserver" in window) || $(".kz-barra")) return;
+    if (!boton || $(".kz-barra")) return;
     const barra = document.createElement("div");
     barra.className = "kz-barra";
     barra.setAttribute("aria-hidden", "true");
     barra.innerHTML = '<div class="kz-barra__texto"><strong></strong><span></span></div><button type="button" class="kz-barra__btn">Agregar</button>';
     document.body.appendChild(barra);
     $(".kz-barra__btn", barra).addEventListener("click", () => boton.click());
-    new IntersectionObserver(([en]) => {
-      const ver = !en.isIntersecting && en.boundingClientRect.top < 0 && !boton.disabled && boton.offsetParent !== null;
-      $("strong", barra).textContent = limpio($(".js-product-name")?.textContent);
-      $("span", barra).textContent = limpio($("#price_display")?.textContent);
+    // aparece cuando el botón "Agregar al carrito" quedó arriba, fuera de la pantalla (con scroll: también si se salta)
+    let espera = false;
+    const revisar = () => {
+      espera = false;
+      const ver = boton.getBoundingClientRect().bottom < 0 && !boton.disabled && boton.offsetParent !== null;
+      if (ver) {
+        $("strong", barra).textContent = limpio($(".js-product-name")?.textContent);
+        $("span", barra).textContent = limpio($("#price_display")?.textContent);
+      }
       barra.classList.toggle("visible", ver);
       barra.setAttribute("aria-hidden", String(!ver));
       document.body.classList.toggle("kz-con-barra", ver);
-    }).observe(boton);
+    };
+    window.addEventListener("scroll", () => { if (!espera) { espera = true; requestAnimationFrame(revisar); } }, { passive: true });
+    revisar();
   }
 
   /* ---------- Tarjetas: "N variedades" ---------- */
@@ -121,6 +138,31 @@
     if (tarjeta) precio.textContent = limpio(tarjeta.textContent);
   }
 
+  /* ---------- Aviso de "agregado": botón "Ver carrito" (como en la propuesta) ---------- */
+  function verCarritoEnAviso() {
+    const caja = $(".js-notification-cart .notification-info-container");
+    if (!caja || $(".kz-ver-carrito", caja)) return;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "kz-ver-carrito";
+    b.textContent = "Ver carrito";
+    b.addEventListener("click", () => {
+      $(".js-cart-notification-close-private")?.click();
+      $('.js-cart-container [data-target="#modal-cart"]')?.click();
+    });
+    caja.appendChild(b);
+  }
+
+  /* ---------- Menú del celu: "Ayuda" con cómo comprar, WhatsApp e Instagram ---------- */
+  function menuAyuda() {
+    const cuerpo = $("#nav-hamburger > .modal-body");
+    if (!cuerpo || $(".kz-menu-extra", cuerpo)) return;
+    cuerpo.insertAdjacentHTML("beforeend", '<div class="kz-menu-extra"><p>Ayuda</p>' +
+      '<a href="/#como-comprar">Cómo comprar</a>' +
+      `<a href="${wa(HOLA)}" target="_blank" rel="noopener">WhatsApp ${ICONO_WA}</a>` +
+      '<a href="https://instagram.com/kosmos_rb" target="_blank" rel="noopener">Instagram</a></div>');
+  }
+
   /* ---------- WhatsApp flotante (el nativo): aparece al bajar ---------- */
   function flotante() {
     const b = $(".btn-whatsapp");
@@ -134,6 +176,9 @@
   function todo() {
     ponerBotonCarrito();
     etiquetas();
+    botonConsultar();
+    verCarritoEnAviso();
+    menuAyuda();
   }
   let pendiente = false;
   new MutationObserver(() => {
