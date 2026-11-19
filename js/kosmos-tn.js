@@ -1,4 +1,7 @@
 /* Kosmos.rb en Tienda Nube (Ipanema): lo que la tienda nativa no trae y estaba en la propuesta aprobada.
+   - Cobran solo por WhatsApp (el usuario, 19/11): sin "Iniciar compra" (carrito lateral y /comprar/) y sin
+     camino al checkout con Enter.
+   - Precios sin ",00": Tienda Nube siempre formatea con 2 decimales y no tiene opción para sacarlos.
    - "Enviar pedido por WhatsApp" en el carrito (el lateral y la página del carrito), con la lista que muestra
      Tienda Nube: producto, variante, cantidad, precio y total. El mensaje se arma en el momento del toque.
    - "Consultar por WhatsApp" en la ficha, con el producto y la variedad elegida.
@@ -21,17 +24,48 @@
   document.documentElement.classList.add("kz-js");
   if (C.checkout === false) document.documentElement.classList.add("kz-sin-checkout");
 
+  /* ---------- Precios sin ",00" (en tarjetas, ficha, carrito, avisos y el mensaje de WhatsApp) ---------- */
+  // Solo el texto que se ve: las cuentas de Tienda Nube usan sus datos (data-priceraw), no este texto.
+  const CENTAVOS = /(\$\s?\d{1,3}(?:\.\d{3})*),00(?!\d)/g;
+  const sinCentavos = s => (s || "").replace(CENTAVOS, "$1");
+  function limpiarPrecios(raiz) {
+    if (!raiz) return;
+    if (raiz.nodeType === 3) {
+      if (raiz.nodeValue.indexOf(",00") >= 0) {
+        const nuevo = sinCentavos(raiz.nodeValue);
+        if (nuevo !== raiz.nodeValue) raiz.nodeValue = nuevo;
+      }
+      return;
+    }
+    if (raiz.nodeType !== 1 && raiz.nodeType !== 9) return;
+    const recorrido = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT);
+    const nodos = [];
+    while (recorrido.nextNode()) {
+      const n = recorrido.currentNode;
+      if (n.nodeValue.indexOf(",00") >= 0 && !/^(SCRIPT|STYLE|TEXTAREA)$/.test(n.parentNode && n.parentNode.nodeName)) nodos.push(n);
+    }
+    nodos.forEach(limpiarPrecios);
+  }
+  window.KZ_SIN_CENTAVOS = sinCentavos;
+
+  /* ---------- Sin checkout: el pedido va por WhatsApp ---------- */
+  const SIN_CHECKOUT = C.checkout === false;
+  // Enter en la cantidad envía el formulario con el botón oculto "Iniciar compra": se frena.
+  document.addEventListener("submit", e => {
+    if (SIN_CHECKOUT && e.submitter && e.submitter.name === "go_to_checkout") e.preventDefault();
+  }, true);
+
   /* ---------- Carrito -> pedido por WhatsApp ---------- */
   function textoPedido(raiz) {
     const lineas = $$(".js-cart-item", raiz).map(it => {
       const nombre = limpio($(".cart-item-name", it)?.textContent);
       const variante = limpio($(".cart-item-variant", it)?.textContent).replace(/^\((.*)\)$/, "$1");
       const cantidad = $(".js-cart-quantity-input", it)?.value || "1";
-      const precio = limpio($(".js-cart-item-subtotal", it)?.textContent);
+      const precio = sinCentavos(limpio($(".js-cart-item-subtotal", it)?.textContent));
       return `• ${cantidad} x ${nombre}${variante ? ` (${variante})` : ""}${precio ? `: ${precio}` : ""}`;
     }).filter(l => l.length > 6);
     if (!lineas.length) return HOLA;
-    const total = limpio($(".js-cart-total", raiz)?.textContent);
+    const total = sinCentavos(limpio($(".js-cart-total", raiz)?.textContent));
     return "¡Hola Kosmos! Quiero hacer este pedido:\n" + lineas.join("\n") + (total ? `\nTotal: ${total}` : "");
   }
   window.KZ_PEDIDO = textoPedido;  // para probarlo
@@ -181,11 +215,16 @@
     menuAyuda();
   }
   let pendiente = false;
-  new MutationObserver(() => {
+  new MutationObserver(registros => {
+    for (const r of registros) {
+      if (r.type === "characterData") limpiarPrecios(r.target);
+      else r.addedNodes.forEach(limpiarPrecios);
+    }
     if (pendiente) return;
     pendiente = true;
     requestAnimationFrame(() => { pendiente = false; todo(); });
-  }).observe(document.body, { childList: true, subtree: true });
+  }).observe(document.body, { childList: true, subtree: true, characterData: true });
+  limpiarPrecios(document.body);
   todo();
   barraFija();
   accesos();
